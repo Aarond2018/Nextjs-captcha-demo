@@ -1,95 +1,58 @@
-import Image from 'next/image'
+'use client'
+
+import { useState, useRef } from 'react'
+import ReCAPTCHA from "react-google-recaptcha";
+import axios from 'axios';
 import styles from './page.module.css'
 
 export default function Home() {
+  const [formData, setFormData] = useState({name: "", message:""})
+  const [btnStatus, setBtnStatus] = useState(false)
+
+  const recaptchaRef = useRef(null)
+
+  const handleDataChange = e => {
+    setFormData(prev => ({...prev, [`${e.target.id}`] : e.target.value }))
+  }
+  
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setBtnStatus(false)
+    const token = recaptchaRef.current.getValue();
+
+    const response = await axios.post("/api/", {formData, token})
+     
+    recaptchaRef.current.reset()
+    console.log(response.data)
+  }
+
+  const onChange = e => {
+    if(e) setBtnStatus(true)
+  }
+
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+      <form onSubmit={handleSubmit}>
+        <h2>Feedback Form</h2>
+        <div className={styles.form_group}>
+          <label htmlFor="name">Name</label>
+          <input type="text" id="name" onChange={handleDataChange} />
         </div>
-      </div>
+        <div className={styles.form_group}>
+          <label htmlFor="message">Message</label>
+          <textarea id="message" rows="7" onChange={handleDataChange} />
+        </div>
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+        <ReCAPTCHA
+          sitekey={process.env.NEXT_PUBLIC_SITE_KEY}
+          onChange={onChange}
+          ref={recaptchaRef}
         />
-      </div>
 
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+        <div className={styles.submit}>
+          <button disabled={!btnStatus}>Submit</button>
+        </div>
+      </form>
     </main>
   )
 }
